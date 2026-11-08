@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Linkpop | Make your own link page</title>
+<meta name="description" content="Build a free page for all your links. Pick colors, add a background, and share one link.">
+<meta name="theme-color" content="#6c5ce7">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:#0f1115}
+
+/* ---------- The link page (what visitors see) ---------- */
+#stage{
+  min-height:100vh;min-height:100dvh;display:flex;justify-content:center;
+  padding:48px 16px 40px;color:var(--text);font-family:var(--font);font-size:16px;line-height:1.5;
+  background-color:#6c5ce7;
+}
+main{width:100%;max-width:560px;text-align:center}
+.avatar{
+  width:96px;height:96px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;
+  font-size:44px;overflow:hidden;background:rgba(255,255,255,.18);box-shadow:0 8px 24px rgba(0,0,0,.22);
+}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar:empty{display:none}
+h1{font-size:1.5rem;line-height:1.2;letter-spacing:-.01em;overflow-wrap:anywhere}
+.bio{margin:8px auto 28px;max-width:42ch;opacity:.85;overflow-wrap:anywhere}
+h1:empty{display:none}
+.bio:empty{display:none}
+h1:empty+.bio:empty{display:none}
+ul{list-style:none;padding:0;display:grid;gap:12px;margin-top:24px}
+.link{
+  display:flex;align-items:center;justify-content:center;min-height:56px;padding:14px 20px;
+  border-radius:var(--radius);text-decoration:none;font-weight:600;overflow-wrap:anywhere;
+  background:var(--btn);color:var(--btnText);box-shadow:0 2px 10px rgba(0,0,0,.14);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+a.link:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 8px 22px rgba(0,0,0,.22)}
+a.link:active{transform:none}
+a.link:focus-visible{outline:3px solid var(--text);outline-offset:3px}
+.link.img{background-size:cover;background-position:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+#foot{margin-top:40px;font-size:.85rem;opacity:.75}
+#foot a{color:inherit}
+@media (prefers-reduced-motion:reduce){.link{transition:none}}
+
+/* ---------- The editor (only for the page owner) ---------- */
+#panel{display:none}
+#fab,#done{display:none}
+body.edit #app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:100vh;height:100dvh}
+body.edit #stage{overflow:auto;min-height:0}
+body.edit #panel{display:block}
+#panel{
+  --pbg:#fff;--pfg:#14161c;--pmut:#5b6170;--pline:#e3e6ee;--pacc:#6c5ce7;
+  background:var(--pbg);color:var(--pfg);border-left:1px solid var(--pline);overflow:auto;
+  font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px 18px 40px;
+}
+@media (prefers-color-scheme:dark){
+  #panel{--pbg:#181b22;--pfg:#f2f4f8;--pmut:#9aa1b2;--pline:#2a2f3b;--pacc:#a29bfe}
+}
+#panel h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--pmut);margin:26px 0 10px}
+#panel h2:first-of-type{margin-top:0}
+#panel label{display:grid;gap:4px;margin-bottom:10px;font-weight:600;font-size:.85rem}
+#panel input,#panel select,#panel textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--pline);border-radius:8px;
+  background:transparent;color:inherit;font:inherit;font-weight:400;
+}
+#panel textarea{resize:vertical;min-height:56px}
+#panel input[type=color]{padding:2px;height:36px;cursor:pointer}
+#panel input[type=range]{padding:0;accent-color:var(--pacc)}
+#panel select option{color:#14161c}
+#panel input:focus-visible,#panel select:focus-visible,#panel textarea:focus-visible,#panel button:focus-visible{outline:2px solid var(--pacc);outline-offset:1px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+output{font-weight:400;color:var(--pmut);float:right}
+.row{border:1px solid var(--pline);border-radius:12px;padding:10px;margin-bottom:10px;display:grid;gap:8px}
+.row .tools{display:flex;gap:6px;align-items:center}
+.row .tools span{flex:1;color:var(--pmut);font-size:.8rem}
+button{font:inherit;cursor:pointer}
+.sm{border:1px solid var(--pline);background:transparent;color:inherit;border-radius:8px;padding:5px 10px;min-width:34px}
+.sm:hover{border-color:var(--pacc)}
+.pri{width:100%;border:0;border-radius:10px;padding:11px 14px;background:var(--pacc);color:#fff;font-weight:700}
+@media (prefers-color-scheme:dark){.pri{color:#14161c}}
+.pri:disabled{opacity:.5;cursor:default}
+.ghost{width:100%;margin-top:8px;border:1px solid var(--pline);background:transparent;color:inherit;border-radius:10px;padding:10px 14px}
+#msg{margin-top:8px;color:var(--pmut);font-size:.85rem;min-height:1.2em}
+.hint{color:var(--pmut);font-size:.8rem;margin:6px 0 0}
+
+@media (max-width:859px){
+  body.edit #app{display:block;height:auto}
+  body.edit #stage{overflow:visible;padding-bottom:110px}
+  body.edit #panel{
+    position:fixed;left:0;right:0;bottom:0;max-height:86vh;max-height:86dvh;z-index:20;
+    border-left:0;border-top:1px solid var(--pline);border-radius:18px 18px 0 0;
+    box-shadow:0 -10px 40px rgba(0,0,0,.3);transform:translateY(105%);transition:transform .25s ease;visibility:hidden;
+  }
+  body.edit #panel.open{transform:none;visibility:visible}
+  body.edit #fab{
+    display:block;position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:10;border:0;border-radius:999px;padding:14px 22px;background:#fff;color:#14161c;font-weight:700;
+    box-shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  body.edit #done{display:block}
+}
+@media (max-width:859px) and (prefers-reduced-motion:reduce){body.edit #panel{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <main>
+      <div class="avatar" id="avatar"></div>
+      <h1 id="name"></h1>
+      <p class="bio" id="bio"></p>
+      <ul id="out"></ul>
+      <footer id="foot"></footer>
+    </main>
+  </div>
+
+  <aside id="panel" aria-label="Customize your page">
+    <h2>Profile</h2>
+    <label>Name<input data-k="name" maxlength="60" autocomplete="off"></label>
+    <label>Bio<textarea data-k="bio" maxlength="200" rows="2"></textarea></label>
+    <label>Picture (an emoji, or a link to an image)<input data-k="avatar" maxlength="600" placeholder="🪺 or https://…/me.jpg" autocomplete="off"></label>
+
+    <h2>Background</h2>
+    <label>Type
+      <select data-k="bg.type">
+        <option value="solid">One color</option>
+        <option value="gradient">Two-color gradient</option>
+        <option value="image">Image from a link</option>
+      </select>
+    </label>
+    <div class="two">
+      <label>Color<input type="color" data-k="bg.c1"></label>
+      <label data-show="gradient">Second color<input type="color" data-k="bg.c2"></label>
+    </div>
+    <label data-show="gradient">Angle <output data-o="bg.angle" data-u="°"></output><input type="range" min="0" max="360" step="5" data-k="bg.angle"></label>
+    <label data-show="image">Image link<input data-k="bg.img" maxlength="600" placeholder="https://…/background.jpg" autocomplete="off"></label>
+    <label data-show="image">Darken image <output data-o="bg.dim" data-u="%"></output><input type="range" min="0" max="80" step="1" data-k="bg.dim"></label>
+
+    <h2>Buttons and text</h2>
+    <div class="two">
+      <label>Text color<input type="color" data-k="theme.text"></label>
+      <label>Button color<input type="color" data-k="theme.btn"></label>
+      <label>Button text<input type="color" data-k="theme.btnText"></label>
+      <label>Shape
+        <select data-k="theme.shape">
+          <option value="round">Rounded</option>
+          <option value="pill">Pill</option>
+          <option value="square">Square</option>
+        </select>
+      </label>
+    </div>
+    <label>Button see-through <output data-o="theme.opacity" data-u="%"></output><input type="range" min="10" max="100" step="1" data-k="theme.opacity"></label>
+    <label>Font
+      <select data-k="theme.font">
+        <option value="sans">Clean</option>
+        <option value="rounded">Rounded</option>
+        <option value="serif">Serif</option>
+        <option value="mono">Mono</option>
+      </select>
+    </label>
+
+    <h2>Links</h2>
+    <div id="links"></div>
+    <button type="button" class="sm" id="add" style="width:100%;padding:10px">+ Add a link</button>
+    <p class="hint">Each link can have its own color, or a background image from a link. Leave them empty to use your button style.</p>
+
+    <h2>Share</h2>
+    <button type="button" class="pri" id="mk">Create my link</button>
+    <input id="share" readonly hidden aria-label="Your link" style="margin-top:10px">
+    <div id="msg" role="status"></div>
+    <p class="hint">Your page is stored inside the link itself, so anyone with it can see your page. To change it later, open this site in the same browser (it remembers your page), or paste your link into the address bar after adding <b>?edit</b> before the <b>#</b>.</p>
+    <button type="button" class="ghost" id="reset">Start over</button>
+    <button type="button" class="ghost" id="done">Done</button>
+  </aside>
+</div>
+<button type="button" id="fab" aria-controls="panel">🎨 Customize</button>
+<noscript><p style="padding:24px;font:16px system-ui;color:#fff">Linkpop needs JavaScript to build and show link pages.</p></noscript>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const KEY='linkpop.v1',MAXL=30;
+const FONTS={
+  sans:'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+  rounded:'ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,Nunito,system-ui,sans-serif',
+  serif:'Georgia,"Times New Roman",serif',
+  mono:'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'
+};
+const SHAPES={round:'14px',pill:'999px',square:'4px'};
+const base=location.href.split('#')[0].split('?')[0];
+
+/* ---------- Safe value helpers (everything is checked before it is used) ---------- */
+const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+const hex=(v,d)=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)?v:d;
+const num=(v,lo,hi,d)=>{v=+v;return Number.isFinite(v)?Math.min(hi,Math.max(lo,v)):d};
+const oneOf=(v,a,d)=>a.includes(v)?v:d;
+function webUrl(v){ // images: http(s) only
+  v=str(v,600).trim();if(!v)return'';
+  try{const u=new URL(/^https?:\/\//i.test(v)?v:'https://'+v);return u.protocol==='https:'||u.protocol==='http:'?u.href:''}catch{return''}
+}
+function linkUrl(v){ // links: http(s), mailto, tel
+  v=str(v,600).trim();if(!v)return'';
+  if(/^[^\s@\/:]+@[^\s@\/:]+\.[^\s@\/:]+$/.test(v))v='mailto:'+v;
+  try{
+    const u=new URL(/^[a-z][a-z0-9+.-]*:/i.test(v)?v:'https://'+v);
+    return['https:','http:','mailto:','tel:'].includes(u.protocol)?u.href:'';
+  }catch{return''}
+}
+const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`};
+const lum=h=>{const n=parseInt(h.slice(1),16);const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+const readable=h=>lum(h)>.179?'#14161c':'#ffffff';
+
+/* ---------- Page data ---------- */
+const defaults=()=>({
+  name:'Your Name',
+  bio:'Creator, builder, and curious human. Everything I do is linked below.',
+  avatar:'🪺',
+  bg:{type:'gradient',c1:'#6c5ce7',c2:'#00b894',angle:135,img:'',dim:35},
+  theme:{text:'#ffffff',btn:'#ffffff',btnText:'#14161c',opacity:92,shape:'round',font:'sans'},
+  links:[
+    {title:'My Website',url:'https://example.com',color:'',img:''},
+    {title:'Instagram',url:'https://instagram.com/yourname',color:'',img:''},
+    {title:'YouTube',url:'https://youtube.com/@yourname',color:'',img:''},
+    {title:'Email me',url:'you@example.com',color:'',img:''}
+  ]
+});
+function clean(raw){
+  const d=defaults(),r=raw&&typeof raw==='object'?raw:{},bg=r.bg&&typeof r.bg==='object'?r.bg:{},th=r.theme&&typeof r.theme==='object'?r.theme:{};
+  return{
+    name:str(r.name,60),bio:str(r.bio,200),avatar:str(r.avatar,600),
+    bg:{type:oneOf(bg.type,['solid','gradient','image'],d.bg.type),c1:hex(bg.c1,d.bg.c1),c2:hex(bg.c2,d.bg.c2),angle:num(bg.angle,0,360,d.bg.angle),img:str(bg.img,600),dim:num(bg.dim,0,80,d.bg.dim)},
+    theme:{text:hex(th.text,d.theme.text),btn:hex(th.btn,d.theme.btn),btnText:hex(th.btnText,d.theme.btnText),opacity:num(th.opacity,10,100,d.theme.opacity),shape:oneOf(th.shape,Object.keys(SHAPES),d.theme.shape),font:oneOf(th.font,Object.keys(FONTS),d.theme.font)},
+    links:(Array.isArray(r.links)?r.links:[]).slice(0,MAXL).map(l=>{l=l&&typeof l==='object'?l:{};return{title:str(l.title,60),url:str(l.url,600),color:hex(l.color,''),img:str(l.img,600)}})
+  };
+}
+const load=()=>{try{const s=localStorage.getItem(KEY);return s?clean(JSON.parse(s)):null}catch{return null}};
+let tm;const save=()=>{clearTimeout(tm);tm=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}},250)};
+
+/* ---------- Share links: the whole page lives in the link (no server needed) ---------- */
+const b64={
+  enc(b){let s='';for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
+  dec(t){t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a}
+};
+async function pipe(bytes,stream){
+  const buf=await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer();
+  if(buf.byteLength>200000)throw new Error('too big');
+  return new Uint8Array(buf);
+}
+async function encode(st){
+  const raw=new TextEncoder().encode(JSON.stringify(st));
+  if('CompressionStream'in window){try{return'z'+b64.enc(await pipe(raw,new CompressionStream('deflate-raw')))}catch{}}
+  return'j'+b64.enc(raw);
+}
+async function decode(s){
+  const k=s[0],bytes=b64.dec(s.slice(1));
+  let raw;
+  if(k==='z')raw=await pipe(bytes,new DecompressionStream('deflate-raw'));
+  else if(k==='j')raw=bytes;
+  else throw new Error('bad link');
+  return JSON.parse(new TextDecoder().decode(raw));
+}
+
+/* ---------- Drawing the page ---------- */
+let state,view=false;
+function render(){
+  const s=state,t=s.theme,bg=s.bg,st=$('#stage');
+  st.style.setProperty('--text',t.text);
+  st.style.setProperty('--btn',rgba(t.btn,t.opacity/100));
+  st.style.setProperty('--btnText',t.btnText);
+  st.style.setProperty('--radius',SHAPES[t.shape]);
+  st.style.setProperty('--font',FONTS[t.font]);
+
+  st.style.backgroundColor=bg.c1;
+  let img='none';
+  if(bg.type==='gradient')img=`linear-gradient(${bg.angle}deg,${bg.c1},${bg.c2})`;
+  else if(bg.type==='image'){
+    const u=webUrl(bg.img),d=bg.dim/100;
+    if(u)img=`linear-gradient(rgba(0,0,0,${d}),rgba(0,0,0,${d})),url("${u}")`;
+  }
+  st.style.backgroundImage=img;
+  st.style.backgroundSize='cover';st.style.backgroundPosition='center';st.style.backgroundRepeat='no-repeat';
+
+  const av=$('#avatar');av.textContent='';
+  const au=/^https?:\/\//i.test(s.avatar)?webUrl(s.avatar):'';
+  if(au){const i=new Image();i.src=au;i.alt='';i.decoding='async';i.referrerPolicy='no-referrer';av.append(i)}
+  else av.textContent=s.avatar.slice(0,8);
+
+  $('#name').textContent=s.name;
+  $('#bio').textContent=s.bio;
+  document.title=(s.name?s.name+' | ':'')+'Linkpop';
+
+  const out=$('#out');out.textContent='';
+  for(const l of s.links){
+    const href=linkUrl(l.url);
+    if(!l.title&&!href)continue;
+    const a=document.createElement(href?'a':'span');
+    a.className='link';
+    if(href){
+      a.href=href;
+      if(href.startsWith('http')){a.target='_blank';a.rel='noopener noreferrer'}
+    }
+    let label=l.title;
+    if(!label&&href){try{label=new URL(href).hostname.replace(/^www\./,'')||href}catch{label=href}}
+    a.textContent=label;
+    if(l.color){a.style.background=rgba(l.color,t.opacity/100);a.style.color=readable(l.color)}
+    const li=webUrl(l.img);
+    if(li){
+      a.classList.add('img');
+      a.style.backgroundImage=`linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),url("${li}")`;
+    }
+    const item=document.createElement('li');item.append(a);out.append(item);
+  }
+}
+
+/* ---------- Editor ---------- */
+const get=p=>p.split('.').reduce((o,k)=>o[k],state);
+const set=(p,v)=>{const a=p.split('.'),l=a.pop();a.reduce((o,k)=>o[k],state)[l]=v};
+function mk(tag,attrs={},...kids){
+  const e=document.createElement(tag);
+  for(const k in attrs){
+    if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]);
+    else e.setAttribute(k,attrs[k]);
+  }
+  e.append(...kids);return e;
+}
+const sbtn=(txt,label,fn,dis)=>{const b=mk('button',{type:'button',class:'sm','aria-label':label,title:label,onclick:fn},txt);if(dis)b.disabled=true;return b};
+
+function changed(){
+  render();
+  $$('output[data-o]').forEach(o=>o.textContent=get(o.dataset.o)+(o.dataset.u||''));
+  $$('[data-show]').forEach(e=>e.hidden=e.dataset.show!==state.bg.type);
+  $('#add').disabled=state.links.length>=MAXL;
+  $('#share').hidden=true;$('#msg').textContent='';
+  save();
+}
+function buildLinks(){
+  const box=$('#links');box.textContent='';
+  state.links.forEach((l,i)=>{
+    const field=(ph,key)=>{
+      const e=mk('input',{type:'text',maxlength:600,placeholder:ph,'aria-label':ph,autocomplete:'off'});
+      e.value=l[key];e.addEventListener('input',()=>{l[key]=e.value;changed()});return e;
+    };
+    const col=mk('input',{type:'color','aria-label':'Own color for this button'});
+    col.value=l.color||state.theme.btn;
+    col.addEventListener('input',()=>{l.color=col.value;changed()});
+    const move=d=>()=>{const j=i+d;[state.links[i],state.links[j]]=[state.links[j],state.links[i]];buildLinks();changed()};
+    box.append(mk('div',{class:'row'},
+      field('Title (e.g. Instagram)','title'),
+      field('Link (https://… or an email)','url'),
+      field('Background image link (optional)','img'),
+      mk('div',{class:'tools'},
+        col,
+        sbtn('Reset color','Use the default button color',()=>{l.color='';col.value=state.theme.btn;changed()}),
+        mk('span'),
+        sbtn('↑','Move up',move(-1),i===0),
+        sbtn('↓','Move down',move(1),i===state.links.length-1),
+        sbtn('✕','Delete this link',()=>{state.links.splice(i,1);buildLinks();changed()})
+      )
+    ));
+  });
+}
+function syncInputs(){
+  $$('[data-k]').forEach(e=>{e.value=get(e.dataset.k)});
+  buildLinks();changed();
+}
+function setupEditor(){
+  $$('[data-k]').forEach(e=>{
+    const p=e.dataset.k;
+    e.addEventListener('input',()=>{
+      set(p,e.type==='range'?+e.value:e.value);
+      if(p==='theme.btn')buildLinks();
+      changed();
+    });
+  });
+  $('#add').addEventListener('click',()=>{
+    if(state.links.length>=MAXL)return;
+    state.links.push({title:'',url:'',color:'',img:''});
+    buildLinks();changed();
+    const rows=$$('#links .row');rows[rows.length-1].querySelector('input').focus();
+  });
+  $('#mk').addEventListener('click',async()=>{
+    const btn=$('#mk');btn.disabled=true;
+    try{
+      const url=base+'#p='+await encode(clean(state));
+      const box=$('#share');box.hidden=false;box.value=url;box.select();
+      let ok=false;
+      try{await navigator.clipboard.writeText(url);ok=true}catch{}
+      $('#msg').textContent=(ok?'Copied! ':'Copy this link. ')+(url.length>6000?'It is long, so some apps may cut it off. Try fewer links or shorter image links.':'Share it anywhere.');
+    }finally{btn.disabled=false}
+  });
+  $('#reset').addEventListener('click',()=>{
+    if(!confirm('Start over? This clears your page.'))return;
+    state=defaults();syncInputs();
+  });
+  const panel=$('#panel'),fab=$('#fab');
+  const toggle=o=>{panel.classList.toggle('open',o);fab.setAttribute('aria-expanded',o)};
+  fab.addEventListener('click',()=>toggle(!panel.classList.contains('open')));
+  $('#done').addEventListener('click',()=>toggle(false));
+  addEventListener('keydown',e=>{if(e.key==='Escape')toggle(false)});
+  syncInputs();
+}
+
+/* ---------- Start ---------- */
+(async()=>{
+  const m=/^#p=([\w-]+)$/.exec(location.hash),edit=/[?&]edit(=|&|$)/.test(location.search);
+  let shared=null;
+  if(m&&m[1].length<30000){try{shared=clean(await decode(m[1]))}catch{}}
+  const foot=$('#foot');
+  if(shared&&!edit){
+    view=true;state=shared;
+    foot.append('Made with ',mk('b',{},'Linkpop'),' · ',mk('a',{href:base},'Make your own'),' · ',mk('a',{href:base+'?edit'+location.hash},'Edit a copy'));
+    render();
+  }else{
+    state=shared||load()||defaults();
+    if(shared){history.replaceState(null,'',base+'?edit');save()}
+    document.body.classList.add('edit');
+    foot.append('Made with ',mk('b',{},'Linkpop'));
+    setupEditor();
+  }
+})();
+})();
+</script>
+</body>
+</html>
